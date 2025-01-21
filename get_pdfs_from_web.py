@@ -8,7 +8,6 @@ BASE_URL = "https://report.grid-india.in/"
 DATE_FORM_URL = f"{BASE_URL}/psp_report.php"
 PDF_FOLDER = "downloaded_pdfs"
 
-# Create folders for storing PDFs
 def setup_folders():
     if not os.path.exists(PDF_FOLDER):
         os.makedirs(PDF_FOLDER)
@@ -17,7 +16,6 @@ def setup_folders():
         if not os.path.exists(year_folder):
             os.makedirs(year_folder)
 
-# Download a file asynchronously
 async def download_file(session, url, folder):
     try:
         async with session.get(url) as response:
@@ -30,7 +28,6 @@ async def download_file(session, url, folder):
     except Exception as e:
         print(f"Failed to download {url}: {e}")
 
-# Get PDF URL for a specific date asynchronously
 async def get_pdf_url(session, target_date):
     formatted_date = target_date.strftime("%Y-%m-%d")
     try:
@@ -46,7 +43,6 @@ async def get_pdf_url(session, target_date):
         print(f"Failed to get PDF URL for {formatted_date}: {e}")
     return None
 
-# Process a single date asynchronously
 async def process_date(session, target_date):
     result = await get_pdf_url(session, target_date)
     if result:
@@ -56,7 +52,6 @@ async def process_date(session, target_date):
     else:
         print(f"No PDF found for {target_date.strftime('%Y-%m-%d')}")
 
-# Main asynchronous function
 async def main():
     setup_folders()
     async with aiohttp.ClientSession() as session:
