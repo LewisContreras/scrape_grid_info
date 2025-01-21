@@ -2,9 +2,16 @@ import os
 import csv
 import pdfplumber
 from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor
+import logging
 
 PDF_FOLDER = "downloaded_pdfs"
 OUTPUT_CSV = "power_supply_position.csv"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+)
 
 
 def extract_table_from_pdf(pdf_path):
@@ -38,7 +45,6 @@ def extract_table_from_pdf(pdf_path):
                     break
 
             if c_position is None or d_position is None:
-                # print(f"Headers not found correctly on page {page.page_number}")
                 continue
 
             cropped_page = page.within_bbox((0, c_position, page.bbox[2], d_position))
@@ -84,7 +90,7 @@ def process_data(raw_data, date):
 
 def write_to_csv(data, output_file):
     if not data:
-        print("No data to write.")
+        logging.warning("No data to write.")
         return
 
     keys = data[0].keys()
@@ -92,7 +98,7 @@ def write_to_csv(data, output_file):
         writer = csv.DictWriter(file, fieldnames=keys)
         writer.writeheader()
         writer.writerows(data)
-    print(f"Data written to {output_file}")
+    logging.info(f"Data written to {output_file}")
 
 
 def extract_date_from_filename(filename):
@@ -101,26 +107,38 @@ def extract_date_from_filename(filename):
         parsed_date = datetime.strptime(date_part, "%d.%m.%y")
         return parsed_date.strftime("%Y-%m-%d")
     except ValueError:
-        print(f"Error parsing date from filename: {filename}")
+        logging.error(f"Error parsing date from filename: {filename}")
         return "Unknown"
+
+
+def process_pdf_file(pdf_file, year_folder):
+    pdf_path = os.path.join(year_folder, pdf_file)
+    date = extract_date_from_filename(pdf_file)
+    raw_data = extract_table_from_pdf(pdf_path)
+    return process_data(raw_data, date)
 
 
 def main():
     all_data = []
-    for year in range(2014, 2025):
-        year_folder = os.path.join(PDF_FOLDER, str(year))
-        if not os.path.exists(year_folder):
-            print(f"Folder not found: {year_folder}")
-            continue
+    tasks = []
 
-        for pdf_file in os.listdir(year_folder):
-            if pdf_file.endswith(".pdf"):
-                pdf_path = os.path.join(year_folder, pdf_file)
-                print(f"Processing: {pdf_path}")
-                date = extract_date_from_filename(pdf_file)
-                raw_data = extract_table_from_pdf(pdf_path)
-                processed_data = process_data(raw_data, date)
-                all_data.extend(processed_data)
+    with ProcessPoolExecutor() as executor:
+        for year in range(2014, 2025):
+            year_folder = os.path.join(PDF_FOLDER, str(year))
+            if not os.path.exists(year_folder):
+                logging.warning(f"Folder not found: {year_folder}")
+                continue
+
+            for pdf_file in os.listdir(year_folder):
+                if pdf_file.endswith(".pdf"):
+                    tasks.append(executor.submit(process_pdf_file, pdf_file, year_folder))
+
+        for future in tasks:
+            try:
+                result = future.result()
+                all_data.extend(result)
+            except Exception as e:
+                logging.error(f"Error processing file: {e}")
 
     all_data = propagate_region(all_data)
     write_to_csv(all_data, OUTPUT_CSV)
