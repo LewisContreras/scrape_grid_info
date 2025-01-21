@@ -6,6 +6,7 @@ from datetime import datetime
 PDF_FOLDER = "downloaded_pdfs"
 OUTPUT_CSV = "power_supply_position.csv"
 
+
 def extract_table_from_pdf(pdf_path):
     extracted_data = []
     with pdfplumber.open(pdf_path) as pdf:
@@ -14,11 +15,16 @@ def extract_table_from_pdf(pdf_path):
             c_position, d_position = None, None
 
             for i in range(len(words)):
-                if (
-                    i + 3 < len(words)
-                    and words[i]["text"] == "C."
-                    and words[i + 1]["text"] == "Power"
-                    and words[i + 2]["text"] == "Supply"
+                if i + 3 < len(words) and (
+                    (
+                        words[i]["text"] == "C."
+                        and words[i + 1]["text"] == "Power"
+                        and words[i + 2]["text"] == "Supply"
+                    )
+                    or (
+                        words[i]["text"] == "C.Power"
+                        and words[i + 1]["text"] == "Supply"
+                    )
                 ):
                     c_position = words[i]["top"]
 
