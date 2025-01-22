@@ -34,14 +34,20 @@ def extract_table_from_pdf(pdf_path):
                     )
                 ):
                     c_position = words[i]["top"]
-
-                if (
-                    i + 2 < len(words)
-                    and words[i]["text"] == "D."
-                    and words[i + 1]["text"] == "Transnational"
-                    and words[i + 2]["text"] == "Exchanges"
+                    logging.info(f"Found C position at {c_position}")
+                if i + 2 < len(words) and (
+                    (
+                        words[i]["text"] == "D."
+                        and words[i + 1]["text"] == "Transnational"
+                        and words[i + 2]["text"] == "Exchanges"
+                    )
+                    or (
+                        words[i]["text"] == "D.Transnational"
+                        and words[i + 1]["text"] == "Exchanges"
+                    )
                 ):
                     d_position = words[i]["top"]
+                    logging.info(f"Found D position at {d_position}")
                     break
 
             if c_position is None or d_position is None:
@@ -53,6 +59,9 @@ def extract_table_from_pdf(pdf_path):
                 for row in table[1:]:
                     if any(row):
                         extracted_data.append(row)
+                return extracted_data
+
+    logging.error(f"Table not found in PDF: {pdf_path}")
     return extracted_data
 
 
@@ -131,7 +140,9 @@ def main():
 
             for pdf_file in os.listdir(year_folder):
                 if pdf_file.endswith(".pdf"):
-                    tasks.append(executor.submit(process_pdf_file, pdf_file, year_folder))
+                    tasks.append(
+                        executor.submit(process_pdf_file, pdf_file, year_folder)
+                    )
 
         for future in tasks:
             try:
