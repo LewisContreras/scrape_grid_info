@@ -34,7 +34,7 @@ def extract_table_from_pdf(pdf_path):
                     )
                 ):
                     c_position = words[i]["top"]
-                    logging.info(f"Found C position at {c_position}")
+
                 if i + 2 < len(words) and (
                     (
                         words[i]["text"] == "D."
@@ -47,7 +47,6 @@ def extract_table_from_pdf(pdf_path):
                     )
                 ):
                     d_position = words[i]["top"]
-                    logging.info(f"Found D position at {d_position}")
                     break
 
             if c_position is None or d_position is None:

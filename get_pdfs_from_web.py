@@ -8,6 +8,7 @@ BASE_URL = "https://report.grid-india.in/"
 DATE_FORM_URL = f"{BASE_URL}/psp_report.php"
 PDF_FOLDER = "downloaded_pdfs"
 
+
 def setup_folders():
     if not os.path.exists(PDF_FOLDER):
         os.makedirs(PDF_FOLDER)
@@ -15,6 +16,7 @@ def setup_folders():
         year_folder = os.path.join(PDF_FOLDER, str(year))
         if not os.path.exists(year_folder):
             os.makedirs(year_folder)
+
 
 async def download_file(session, url, folder):
     try:
@@ -24,14 +26,16 @@ async def download_file(session, url, folder):
             with open(filename, "wb") as file:
                 while chunk := await response.content.read(1024):
                     file.write(chunk)
-            print(f"Downloaded: {filename}")
     except Exception as e:
         print(f"Failed to download {url}: {e}")
+
 
 async def get_pdf_url(session, target_date):
     formatted_date = target_date.strftime("%Y-%m-%d")
     try:
-        async with session.post(DATE_FORM_URL, data={"selected_date": formatted_date}) as response:
+        async with session.post(
+            DATE_FORM_URL, data={"selected_date": formatted_date}
+        ) as response:
             soup = BeautifulSoup(await response.text(), "html.parser")
             iframe = soup.find("iframe", class_="pdf-frame")
             if iframe and "src" in iframe.attrs:
@@ -43,6 +47,7 @@ async def get_pdf_url(session, target_date):
         print(f"Failed to get PDF URL for {formatted_date}: {e}")
     return None
 
+
 async def process_date(session, target_date):
     result = await get_pdf_url(session, target_date)
     if result:
@@ -52,6 +57,7 @@ async def process_date(session, target_date):
     else:
         print(f"No PDF found for {target_date.strftime('%Y-%m-%d')}")
 
+
 async def main():
     setup_folders()
     async with aiohttp.ClientSession() as session:
@@ -59,10 +65,14 @@ async def main():
         for year in range(2014, 2025):
             start_date = date(year, 1, 1)
             end_date = date(year, 1, 31)
-            dates_to_process = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+            dates_to_process = [
+                start_date + timedelta(days=i)
+                for i in range((end_date - start_date).days + 1)
+            ]
             for target_date in dates_to_process:
                 tasks.append(process_date(session, target_date))
         await asyncio.gather(*tasks)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
