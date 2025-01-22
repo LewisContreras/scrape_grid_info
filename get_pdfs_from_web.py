@@ -3,16 +3,16 @@ from datetime import date, timedelta
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
+from common import PDF_FOLDER, YEARS_RANGE
 
 BASE_URL = "https://report.grid-india.in/"
 DATE_FORM_URL = f"{BASE_URL}/psp_report.php"
-PDF_FOLDER = "downloaded_pdfs"
 
 
 def setup_folders():
     if not os.path.exists(PDF_FOLDER):
         os.makedirs(PDF_FOLDER)
-    for year in range(2014, 2025):
+    for year in YEARS_RANGE:
         year_folder = os.path.join(PDF_FOLDER, str(year))
         if not os.path.exists(year_folder):
             os.makedirs(year_folder)
@@ -62,7 +62,7 @@ async def main():
     setup_folders()
     async with aiohttp.ClientSession() as session:
         tasks = []
-        for year in range(2014, 2025):
+        for year in YEARS_RANGE:
             start_date = date(year, 1, 1)
             end_date = date(year, 1, 31)
             dates_to_process = [

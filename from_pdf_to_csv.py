@@ -4,8 +4,8 @@ import pdfplumber
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 import logging
+from common import PDF_FOLDER, YEARS_RANGE
 
-PDF_FOLDER = "downloaded_pdfs"
 OUTPUT_CSV = "power_supply_position.csv"
 
 logging.basicConfig(
@@ -131,7 +131,7 @@ def main():
     tasks = []
 
     with ProcessPoolExecutor() as executor:
-        for year in range(2014, 2025):
+        for year in YEARS_RANGE:
             year_folder = os.path.join(PDF_FOLDER, str(year))
             if not os.path.exists(year_folder):
                 logging.warning(f"Folder not found: {year_folder}")
